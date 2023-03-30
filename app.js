@@ -4,6 +4,8 @@
 let page = 1
 let game = document.querySelector(".Game")
 let vscom = null
+let players = localStorage.getItem("players")
+let savedPlayers = JSON.parse(players)
 let player1;
 let player2;
 let player1turn = true
@@ -23,8 +25,7 @@ let winningMoves = [[1,2,3], [3,2,1], [4,5,6],
 
 const handleWins = () => {
     
-    if(player1turn){
-        
+    if(player1turn) {
     for (let i in winningMoves){
         let count = 0
         for (let j in player1moves){
@@ -46,8 +47,7 @@ const handleWins = () => {
             }
         }
     }
-   }else {
-        
+}else{
         for (let i in winningMoves){
             let count = 0
             for (let j in player2moves){
@@ -69,6 +69,26 @@ const handleWins = () => {
            }
         }
         }
+
+        if (count2 === 5 && count1 < 5) {
+            for (let i in savedPlayers.people) {
+                console.log(savedPlayers.people[i])
+                if(savedPlayers.people[i].name === player2){
+                    console.log("true")
+                    if (count1 === 0){
+                      savedPlayers.people[i].score = savedPlayers.people[i].score + 100
+                    }else{
+                        savedPlayers.people[i].score = savedPlayers.people[i].score + 50
+                    }
+                    console.log(savedPlayers.people[i].score)
+                    localStorage.setItem("players", JSON.stringify({people: savedPlayers.people}))
+                }else {
+                    console.log(false)
+                }
+            }
+            
+        }
+    
     }
     let gridCount = 0
     for (let i in boardBoxes){
@@ -78,7 +98,13 @@ const handleWins = () => {
         }
     }
     if (gridCount === 9){
-        console.log("A tie")
+        player1moves = []
+        player2moves = []
+        grid.textContent = ""
+        p2Score.textContent = count2
+        for(let i in boardBoxes){
+           boardBoxes[i] = initialBoard[i]
+        }
     }
 
 }
@@ -93,14 +119,40 @@ const handleTakePlayers = (e) => {
         player2 = "computer"
         p1PanelName.textContent = player1
         p2PanelName.textContent = player2
+        page = 3
+        
     }else {
+        let existedName1;
+        let existedName2;
         player1 = input1.value
         player2 = input2.value
+        
+        if (savedPlayers === null) {
+            savedPlayers = {people: []}
+            savedPlayers.people.push({name: player1, score: 0})
+            savedPlayers.people.push({name: player2, score: 0})
+            console.log(savedPlayers.people)
+            localStorage.setItem("players", JSON.stringify({people: savedPlayers.people}))
+        }else{
+            existedName1 = savedPlayers.people.filter(player => player.name === player1)
+            if (existedName1.length === 0){
+                savedPlayers.people.push({name: player1, score: 0})
+                localStorage.setItem("players", JSON.stringify({people: savedPlayers.people}))
+            }
+            existedName2 = savedPlayers.people.filter(player => player.name === player2)
+        if (existedName2.length === 0) {
+            savedPlayers.people.push({name: player2, score: 0})
+            console.log(savedPlayers.people)
+            localStorage.setItem("players", JSON.stringify({people: savedPlayers.people}))
+        }
+        }
+        
         p1PanelName.textContent = player1
         p2PanelName.textContent = player2
+
+        page = 3
     }
     
-    page = 3
     handleGame()
 }
 
@@ -122,6 +174,7 @@ const handleGameOn = (e) => {
    e.preventDefault()
    let box = e.target
    let newBox = document.createElement("div")
+   if(vscom === false) {
    if(player1turn) {
     newBox.setAttribute("id", `player1-new${box.id}`)
     let p = document.createElement("p")
@@ -134,8 +187,10 @@ const handleGameOn = (e) => {
         player1moves.push(parseInt(i) + 1)
       }
     }
+    console.log(player1moves)
     handleWins()
     player1turn = false
+    
 }else {
     
     newBox.setAttribute("id", `player2-new${box.id}`)
@@ -151,14 +206,70 @@ const handleGameOn = (e) => {
     }
     handleWins()
     player1turn = true
-}
-   
-   
+}  
    box.remove()
    for(let i in boardBoxes){
     grid.append(boardBoxes[i])
-   } 
+   }
+   }else{
+
+    newBox.setAttribute("id", `player1-new${box.id}`)
+    let p = document.createElement("p")
+    p.setAttribute("id", `${newBox.id}p`)
+    p.textContent = "O"
+    newBox.append(p)
+    for(let i in boardBoxes) {
+      if (boardBoxes[i] === box){
+        boardBoxes[i] = newBox
+        player1moves.push(parseInt(i) + 1)
+      }
+    }
+    console.log(player1moves)
+    handleWins()
+    box.remove()
+    for(let i in boardBoxes){
+        grid.append(boardBoxes[i])
+    }
+    player1turn = false
+
+    let arr = []
+    for (let i in boardBoxes) {
+        if(boardBoxes[i].id.startsWith("box")) {
+            arr.push(parseInt(i))
+            console.log(boardBoxes[i])
+        }
+    }
+    let comMove = Math.floor(Math.random() * arr.length)
+    let box1 = boardBoxes[arr[comMove]]
+    console.log(comMove)
+    console.log(arr[comMove])
+    console.log(arr)
+    let newBox1 = document.createElement("div")
+    newBox1.setAttribute("id", `player2-newbox${comMove + 1}`)
+    let p1 = document.createElement("p")
+    p1.setAttribute("id", `${newBox1.id}p`)
+    p1.textContent = "X"
+    newBox1.append(p1)
+    for(let i in boardBoxes){
+        if (boardBoxes[i] === box1){
+           boardBoxes[i] = newBox1
+        }
+    }
+    player2moves.push(arr[comMove] + 1)
+    console.log(player2moves)
+    handleWins()
+    box1.remove()
+    for(let i in boardBoxes){
+        grid.append(boardBoxes[i])
+    }
+    console.log(boardBoxes)
+    player1turn = true
+
+    }
+   
 }
+
+
 const handleGame = () => {
     if (page === 1){
         game.appendChild(p_or_c)
